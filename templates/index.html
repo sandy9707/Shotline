@@ -1,246 +1,216 @@
 <!DOCTYPE html>
-<html>
-
-<head>
-    <meta charset="utf-8" />
-    <title>📸 Screenshot Timeline</title>
+<html lang="zh">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Shotline+ — {{ date }}</title>
     <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-            margin: 20px 40px;
-            background: #f9f9f9;
-        }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+        background: #111;
+        color: #eee;
+        text-align: center;
+        margin: 0;
+      }
+      h1 {
+        margin: 1em 0 0.5em;
+      }
+      nav {
+        margin-bottom: 1em;
+      }
 
-        h1 {
-            font-size: 22px;
-            margin-bottom: 10px;
-        }
+      .hour-block {
+        margin: 20px auto;
+        width: 90%;
+        background: #1c1c1c;
+        border-radius: 8px;
+        padding: 10px;
+      }
+      .hour-title {
+        font-size: 18px;
+        font-weight: bold;
+        color: #0ff;
+        text-align: left;
+        margin-left: 12px;
+      }
 
-        button {
-            background: #0070f3;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 8px;
-            cursor: pointer;
-        }
+      img.thumb {
+        width: 200px;
+        height: auto;
+        margin: 6px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: 0.2s;
+      }
+      img.thumb:hover {
+        transform: scale(1.05);
+        box-shadow: 0 0 8px rgba(255, 255, 255, 0.4);
+      }
 
-        button:hover {
-            background: #0059c1;
-        }
-
-        .nav {
-            margin: 15px 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 20px;
-        }
-
-        .hour {
-            margin-bottom: 20px;
-            padding: 10px;
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 1px 3px #ccc;
-        }
-
-        .hour-title {
-            font-weight: bold;
-            font-size: 18px;
-            margin-bottom: 8px;
-        }
-
-        .img-wrap {
-            display: inline-block;
-            margin: 6px;
-            text-align: center;
-        }
-
-        img {
-            height: 80px;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: transform 0.2s ease;
-        }
-
-        img:hover {
-            transform: scale(1.05);
-        }
-
-        .time {
-            display: block;
-            color: #444;
-            margin-top: 4px;
-            font-size: 12px;
-            font-family: monospace;
-        }
-
-        #overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.85);
-            justify-content: center;
-            align-items: center;
-            flex-direction: column;
-            z-index: 1000;
-        }
-
-        #overlay img {
-            max-width: 85%;
-            max-height: 85%;
-            border-radius: 10px;
-            box-shadow: 0 0 15px #000;
-        }
-
-        #filename {
-            color: #fff;
-            font-family: monospace;
-            margin-top: 10px;
-            font-size: 14px;
-        }
-
-        .arrow {
-            position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
-            font-size: 48px;
-            color: white;
-            cursor: pointer;
-            user-select: none;
-            padding: 20px;
-            transition: 0.2s;
-        }
-
-        .arrow:hover {
-            color: #00aaff;
-        }
-
-        #left-arrow {
-            left: 20px;
-        }
-
-        #right-arrow {
-            right: 20px;
-        }
+      .modal {
+        display: none;
+        position: fixed;
+        z-index: 99;
+        padding-top: 4vh;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.85);
+      }
+      .modal-content {
+        margin: auto;
+        display: block;
+        width: 75vw;
+        height: auto;
+        max-height: 90vh;
+        border-radius: 12px;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.6);
+      }
+      #filename {
+        color: #ccc;
+        margin-top: 10px;
+        font-family: monospace;
+        font-size: 14px;
+      }
+      .arrow {
+        position: fixed;
+        top: 50%;
+        font-size: 48px;
+        color: #fff;
+        cursor: pointer;
+        user-select: none;
+        opacity: 0.5;
+        transition: 0.2s;
+      }
+      .arrow:hover {
+        opacity: 1;
+      }
+      #leftArrow {
+        left: 40px;
+      }
+      #rightArrow {
+        right: 40px;
+      }
     </style>
-</head>
+  </head>
+  <body>
+    <h1>📸 Shotline+ — {{ date }}</h1>
 
-<body>
-    <h1>📸 Screenshot Timeline</h1>
-    <button onclick="takeShot()">立即截图</button>
+    <nav>
+      {% for d in available_dates %}
+      <a
+        href="/{{ d }}"
+        style="color: {{ 'cyan' if d == date else '#888' }}; margin: 0 6px; text-decoration: none;"
+      >
+        {{ d }}
+      </a>
+      {% endfor %}
+    </nav>
 
-    <div class="nav">
-        <button onclick="changeDate(-1)">← 前一天</button>
-        <span id="date-display" style="font-weight:bold;font-size:16px;"></span>
-        <button onclick="changeDate(1)">后一天 →</button>
+    {% if shots_by_hour %} {% for hour, shots in shots_by_hour %}
+    <div class="hour-block">
+      <div class="hour-title">{{ hour }}:00</div>
+      {% for f in shots %}
+      <img
+        src="/screenshots/{{ date }}/{{ f }}"
+        class="thumb"
+        onclick="openModal('{{ date }}','{{ f }}')"
+      />
+      {% endfor %}
     </div>
+    {% endfor %} {% else %}
+    <p>🕳️ 没有找到 {{ date }} 的截图</p>
+    {% endif %}
 
-    <div id="content"></div>
-
-    <!-- 放大图层 -->
-    <div id="overlay">
-        <span id="left-arrow" class="arrow" onclick="prevImage(event)">❮</span>
-        <img id="overlay-img" src="">
-        <span id="right-arrow" class="arrow" onclick="nextImage(event)">❯</span>
-        <div id="filename"></div>
+    <div id="modal" class="modal" onclick="closeModal()">
+      <img class="modal-content" id="modalImg" />
+      <div id="filename"></div>
+      <div
+        id="leftArrow"
+        class="arrow"
+        onclick="event.stopPropagation();prevImage()"
+      >
+        &#10094;
+      </div>
+      <div
+        id="rightArrow"
+        class="arrow"
+        onclick="event.stopPropagation();nextImage()"
+      >
+        &#10095;
+      </div>
     </div>
 
     <script>
-        let logs = {{ logs| tojson }};
-        let currentDate = new Date().toISOString().slice(0, 10);
-        let currentImages = [];
-        let currentIndex = 0;
+            let allShots = [];
+            {% for _, shots in shots_by_hour %}
+              {% for f in shots %}
+                allShots.push("/screenshots/{{ date }}/{{ f }}");
+              {% endfor %}
+            {% endfor %}
+            let currentIndex = -1;
 
-        function showDateLogs(dateStr) {
-            document.getElementById("date-display").innerText = dateStr;
-            const container = document.getElementById("content");
-            container.innerHTML = "";
-            const entries = Object.entries(logs)
-                .filter(([hour, _]) => hour.startsWith(dateStr))
-                .sort(([a, _1], [b, _2]) => b.localeCompare(a));
-            if (entries.length === 0) {
-                container.innerHTML = "<p>无截图记录</p>";
-                return;
+            function openModal(date, filename) {
+              const src = `/screenshots/${date}/${filename}`;
+              currentIndex = allShots.indexOf(src);
+              const modal = document.getElementById('modal');
+              const img = document.getElementById('modalImg');
+              const fn = document.getElementById('filename');
+              img.src = src;
+              fn.textContent = filename;
+              modal.style.display = 'block';
             }
-            currentImages = []; // 重置
-            for (const [hour, shots] of entries) {
-                const div = document.createElement("div");
-                div.className = "hour";
-                const hourLabel = document.createElement("div");
-                hourLabel.className = "hour-title";
-                hourLabel.innerText = hour + ":00";
-                div.appendChild(hourLabel);
-                for (const [i, entry] of shots.entries()) {
-                    const wrap = document.createElement("div");
-                    wrap.className = "img-wrap";
-                    const img = document.createElement("img");
-                    const url = `/preview/${i}/${hour}`;
-                    img.src = url;
-                    img.dataset.filename = entry.file.split("/").pop();
-                    img.onclick = () => showOverlay(i, hour, entry.file);
-                    const t = document.createElement("span");
-                    t.className = "time";
-                    t.innerText = entry.time;
-                    wrap.appendChild(img);
-                    wrap.appendChild(t);
-                    div.appendChild(wrap);
-                    currentImages.push({ url, name: entry.file.split("/").pop() });
-                }
-                container.appendChild(div);
+            function closeModal() {
+              document.getElementById('modal').style.display = 'none';
             }
+            function showImage(i) {
+              if (i < 0 || i >= allShots.length) return;
+              currentIndex = i;
+              const img = document.getElementById('modalImg');
+              const fn = document.getElementById('filename');
+              img.src = allShots[i];
+              const parts = allShots[i].split('/');
+              fn.textContent = parts[parts.length - 1];
+            }
+            function nextImage() {
+        if (currentIndex + 1 < allShots.length) {
+          showImage(currentIndex + 1);
+        } else {
+          // 已到最后一张 → 尝试跳到下一小时（即上一组，因为按小时倒序显示）
+          const dateLinks = [...document.querySelectorAll('.hour-title')];
+          const currentHour = allShots[currentIndex].match(/(\d{2})-\d{2}-\d{2}/);
+          if (!currentHour) return;
+          const currentHourNum = parseInt(currentHour[1]);
+          const nextHourBlock = dateLinks.find(h => parseInt(h.textContent) < currentHourNum);
+          if (nextHourBlock) {
+            nextHourBlock.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
         }
+      }
 
-        function changeDate(delta) {
-            const d = new Date(currentDate);
-            d.setDate(d.getDate() + delta);
-            currentDate = d.toISOString().slice(0, 10);
-            showDateLogs(currentDate);
+      function prevImage() {
+        if (currentIndex - 1 >= 0) {
+          showImage(currentIndex - 1);
+        } else {
+          // 已到第一张 → 跳到上一小时
+          const dateLinks = [...document.querySelectorAll('.hour-title')];
+          const currentHour = allShots[currentIndex].match(/(\d{2})-\d{2}-\d{2}/);
+          if (!currentHour) return;
+          const currentHourNum = parseInt(currentHour[1]);
+          const prevHourBlock = dateLinks.find(h => parseInt(h.textContent) > currentHourNum);
+          if (prevHourBlock) {
+            prevHourBlock.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
         }
+      }
 
-        function takeShot() {
-            fetch("/shot", { method: "POST" }).then(r => r.json()).then(d => {
-                alert("截图完成: " + d.time);
-                location.reload();
+
+            document.addEventListener('keydown', (e) => {
+              if (document.getElementById('modal').style.display !== 'block') return;
+              if (e.key === 'ArrowRight') nextImage();
+              if (e.key === 'ArrowLeft') prevImage();
+              if (e.key === 'Escape') closeModal();
             });
-        }
-
-        function showOverlay(i, hour, file) {
-            currentIndex = currentImages.findIndex(x => x.name === file.split("/").pop());
-            updateOverlay();
-            document.getElementById("overlay").style.display = "flex";
-        }
-
-        function updateOverlay() {
-            const item = currentImages[currentIndex];
-            const img = document.getElementById("overlay-img");
-            const filename = document.getElementById("filename");
-            img.src = item.url;
-            filename.innerText = item.name;
-        }
-
-        function prevImage(e) {
-            e.stopPropagation();
-            currentIndex = (currentIndex - 1 + currentImages.length) % currentImages.length;
-            updateOverlay();
-        }
-
-        function nextImage(e) {
-            e.stopPropagation();
-            currentIndex = (currentIndex + 1) % currentImages.length;
-            updateOverlay();
-        }
-
-        document.getElementById("overlay").onclick = (e) => {
-            if (e.target.id === "overlay") e.currentTarget.style.display = "none";
-        };
-
-        showDateLogs(currentDate);
     </script>
-</body>
-
+  </body>
 </html>

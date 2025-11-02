@@ -24,7 +24,8 @@ for i in {1..3}; do
         mv "$output_root/$latest" "$new_file"
 
         # 使用 mogrify 压缩（覆盖原图）
-        mogrify -quality 75 "$new_file"
+        magick convert "$new_file" -quality 50 "${new_file%.*}.jpg" && rm "$new_file"
+
         echo "✅ 已保存并压缩: $new_file"
     fi
 

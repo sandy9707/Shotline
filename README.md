@@ -15,6 +15,10 @@
 - 📝 放大模式显示文件名
 - 🔄 手动一键截图触发
 
+![1762084184290](README/1762084184290.png)
+
+![1762085144002](README/1762085144002.png)
+
 ---
 
 ## 🧩 目录结构
@@ -92,6 +96,8 @@ http://127.0.0.1:5000
 
 This will allow Warp to record your screen and system audio, including personal or sensitive information that may be visible or audible.
 ```
+
+![1762084129029](README/1762084129029.png)
 
 ## 📄 License
 

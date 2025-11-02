@@ -1,83 +1,67 @@
 #!/usr/bin/env python3
-import os, json, datetime, threading
-from flask import Flask, render_template, send_from_directory, jsonify
+# -*- coding: utf-8 -*-
+# ======================================================
+# Shotline+ : 自动读取截图目录并网页显示时间线（分小时）
+# ======================================================
 
-SCRIPT_PATH = "/Volumes/lev/Documents/code/scripts/auto_screenshot.sh"
+from flask import Flask, render_template, send_from_directory, abort
+import os
+from datetime import datetime
+from collections import defaultdict
+
+app = Flask(__name__)
+
 SCREENSHOT_BASE = "/Volumes/lev/doclev/Screenshots"
-LOG_FILE = "/Volumes/lev/Documents/code/scripts/screenshot_log.json"
-INTERVAL_MIN = 15
-START_HOUR, END_HOUR = 8, 22
-
-app = Flask(__name__, template_folder="templates")
-
-
-def find_latest_screenshot():
-    latest_file, latest_time = None, 0
-    for root, _, files in os.walk(SCREENSHOT_BASE):
-        for f in files:
-            if f.lower().endswith((".png", ".jpg")):
-                path = os.path.join(root, f)
-                t = os.path.getmtime(path)
-                if t > latest_time:
-                    latest_file, latest_time = path, t
-    return latest_file
-
-
-def run_screenshot():
-    now = datetime.datetime.now()
-    hour = now.strftime("%Y-%m-%d %H")
-    minute = now.strftime("%H:%M:%S")
-    os.system(f"bash '{SCRIPT_PATH}'")
-    latest_file = find_latest_screenshot()
-    if not latest_file:
-        print("⚠️ No screenshot found!")
-        return
-    data = json.load(open(LOG_FILE)) if os.path.exists(LOG_FILE) else {}
-    data.setdefault(hour, []).append({"time": minute, "file": latest_file})
-    with open(LOG_FILE, "w") as f:
-        json.dump(data, f, indent=2)
-    print(f"✅ Logged screenshot at {minute}")
-
-
-def schedule_loop():
-    now = datetime.datetime.now()
-    if START_HOUR <= now.hour < END_HOUR:
-        run_screenshot()
-    threading.Timer(INTERVAL_MIN * 60, schedule_loop).start()
-
-
-threading.Thread(target=schedule_loop, daemon=True).start()
 
 
 @app.route("/")
-def index():
-    data = json.load(open(LOG_FILE)) if os.path.exists(LOG_FILE) else {}
-    return render_template("index.html", logs=data)
+@app.route("/<date>")
+def index(date=None):
+    if date is None:
+        date = datetime.now().strftime("%Y-%m-%d")
 
+    day_path = os.path.join(SCREENSHOT_BASE, date)
+    grouped = defaultdict(list)
 
-@app.route("/preview/<int:idx>/<hour>")
-def preview(idx, hour):
-    if not os.path.exists(LOG_FILE):
-        return "No log", 404
-    data = json.load(open(LOG_FILE))
-    entry = data.get(hour, [])[idx]
-    file_path = entry.get("file")
-    if file_path and os.path.exists(file_path):
-        dirpath, filename = os.path.split(file_path)
-        return send_from_directory(dirpath, filename)
-    return "File not found", 404
+    if os.path.exists(day_path):
+        files = [
+            f
+            for f in os.listdir(day_path)
+            if f.lower().endswith((".png", ".jpg", ".jpeg"))
+        ]
 
+    # 按小时和时间名（文件名升序）分组
+    for f in sorted(files):
+        hour = f[:2] if len(f) >= 2 and f[2] == "-" else "??"
+        grouped[hour].append(f)
 
-@app.route("/shot", methods=["POST"])
-def shot_now():
-    run_screenshot()
-    return jsonify(
-        {"status": "ok", "time": datetime.datetime.now().strftime("%H:%M:%S")}
+    # 每小时内也升序
+    for h in grouped:
+        grouped[h].sort()
+
+    return render_template(
+        "index.html",
+        date=date,
+        shots_by_hour=sorted(grouped.items(), reverse=True),
+        available_dates=list_dirs(),
     )
+
+
+@app.route("/screenshots/<date>/<filename>")
+def serve_screenshot(date, filename):
+    dir_path = os.path.join(SCREENSHOT_BASE, date)
+    if not os.path.exists(os.path.join(dir_path, filename)):
+        abort(404)
+    return send_from_directory(dir_path, filename)
+
+
+def list_dirs():
+    dirs = []
+    for d in os.listdir(SCREENSHOT_BASE):
+        if os.path.isdir(os.path.join(SCREENSHOT_BASE, d)) and d.startswith("20"):
+            dirs.append(d)
+    return sorted(dirs, reverse=True)
 
 
 if __name__ == "__main__":
-    print(
-        f"✅ Screenshot monitor running between {START_HOUR}:00–{END_HOUR}:00, every {INTERVAL_MIN} min"
-    )
-    app.run(host="127.0.0.1", port=5000)
+    app.run(host="0.0.0.0", port=5050, debug=True)
