@@ -83,6 +83,16 @@ http://127.0.0.1:5000
 
 ---
 
+## 特别说明
+
+一开始用的系统截图，结果 mac 的愚蠢的截图权限系统一直弹出权限请求窗口，最后不得已使用了 shottr 来完成截图的任务，如果有谁解决了这个问题，我认为 screencapture 无疑是一个更优秀的解法。
+
+```txt
+"Warp" is requesting to bypass the system private window picker and directly access your screen and audio.
+
+This will allow Warp to record your screen and system audio, including personal or sensitive information that may be visible or audible.
+```
+
 ## 📄 License
 
 MIT License © 2025 by [Your Name]
