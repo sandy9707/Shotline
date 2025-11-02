@@ -446,3 +446,12 @@ Press CTRL+C to quit
 ✅ 已保存并压缩: /Volumes/lev/doclev/Screenshots/2025-11-02/19-15-22_3.png
 29:37: execution error: Can’t get application "stable". (-1728)
 127.0.0.1 - - [02/Nov/2025 19:23:59] "GET /preview/0/2025-10-31%2013 HTTP/1.1" 304 -
+✅ Screenshot monitor running between 8:00–22:00, every 15 min
+ * Serving Flask app 'auto_screenshot_web'
+ * Debug mode: off
+bash: /Volumes/lev/Documents/code/scripts/auto_screenshot.sh: No such file or directory
+WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on http://127.0.0.1:5000
+Press CTRL+C to quit
+127.0.0.1 - - [02/Nov/2025 19:37:34] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [02/Nov/2025 19:37:34] "GET /preview/0/2025-11-02%2019 HTTP/1.1" 200 -
