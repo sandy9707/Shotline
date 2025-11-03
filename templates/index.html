@@ -143,9 +143,14 @@
 
     <script>
             let allShots = [];
-            {% for _, shots in shots_by_hour %}
+            let hourBoundaries = []; // 记录每小时起止索引
+            let indexCounter = 0;
+
+            {% for hour, shots in shots_by_hour %}
+              hourBoundaries.push([indexCounter, indexCounter + {{ shots|length }} - 1]);
               {% for f in shots %}
                 allShots.push("/screenshots/{{ date }}/{{ f }}");
+                indexCounter += 1;
               {% endfor %}
             {% endfor %}
             let currentIndex = -1;
@@ -173,36 +178,33 @@
               fn.textContent = parts[parts.length - 1];
             }
             function nextImage() {
-        if (currentIndex + 1 < allShots.length) {
-          showImage(currentIndex + 1);
-        } else {
-          // 已到最后一张 → 尝试跳到下一小时（即上一组，因为按小时倒序显示）
-          const dateLinks = [...document.querySelectorAll('.hour-title')];
-          const currentHour = allShots[currentIndex].match(/(\d{2})-\d{2}-\d{2}/);
-          if (!currentHour) return;
-          const currentHourNum = parseInt(currentHour[1]);
-          const nextHourBlock = dateLinks.find(h => parseInt(h.textContent) < currentHourNum);
-          if (nextHourBlock) {
-            nextHourBlock.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          }
-        }
-      }
+              if (currentIndex + 1 < allShots.length) {
+                showImage(currentIndex + 1);
+              } else {
+                // 已到最后一张 → 跳到下一小时最前面（如果有）
+                for (let i = 0; i < hourBoundaries.length; i++) {
+                  if (currentIndex === hourBoundaries[i][1] && i + 1 < hourBoundaries.length) {
+                    showImage(hourBoundaries[i + 1][0]);
+                    return;
+                  }
+                }
+              }
+            }
 
-      function prevImage() {
-        if (currentIndex - 1 >= 0) {
-          showImage(currentIndex - 1);
-        } else {
-          // 已到第一张 → 跳到上一小时
-          const dateLinks = [...document.querySelectorAll('.hour-title')];
-          const currentHour = allShots[currentIndex].match(/(\d{2})-\d{2}-\d{2}/);
-          if (!currentHour) return;
-          const currentHourNum = parseInt(currentHour[1]);
-          const prevHourBlock = dateLinks.find(h => parseInt(h.textContent) > currentHourNum);
-          if (prevHourBlock) {
-            prevHourBlock.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          }
-        }
-      }
+            function prevImage() {
+              if (currentIndex - 1 >= 0) {
+                showImage(currentIndex - 1);
+              } else {
+                // 已到最前一张 → 跳到上一小时最后一张（如果有）
+                for (let i = 0; i < hourBoundaries.length; i++) {
+                  if (currentIndex === hourBoundaries[i][0] && i - 1 >= 0) {
+                    showImage(hourBoundaries[i - 1][1]);
+                    return;
+                  }
+                }
+              }
+            }
+
 
 
             document.addEventListener('keydown', (e) => {

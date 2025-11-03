@@ -23,6 +23,8 @@ def index(date=None):
     day_path = os.path.join(SCREENSHOT_BASE, date)
     grouped = defaultdict(list)
 
+    files = []
+
     if os.path.exists(day_path):
         files = [
             f
@@ -39,11 +41,17 @@ def index(date=None):
     for h in grouped:
         grouped[h].sort()
 
+    # return render_template(
+    #     "index.html",
+    #     date=date,
+    #     shots_by_hour=sorted(grouped.items(), reverse=True),
+    #     available_dates=list_dirs(),
+    # )
     return render_template(
         "index.html",
         date=date,
-        shots_by_hour=sorted(grouped.items(), reverse=True),
-        available_dates=list_dirs(),
+        shots_by_hour=[(h, grouped[h]) for h in sorted(grouped.keys())],  # 小时升序
+        available_dates=sorted(list_dirs(), reverse=True),  # 日期降序（最近在上面）
     )
 
 
