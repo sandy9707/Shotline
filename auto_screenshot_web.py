@@ -8,10 +8,31 @@ from flask import Flask, render_template, send_from_directory, abort
 import os
 from datetime import datetime
 from collections import defaultdict
+import subprocess, datetime, threading, time
 
 app = Flask(__name__)
 
 SCREENSHOT_BASE = "/Volumes/lev/doclev/Screenshots"
+SCRIPT_PATH = "/Volumes/lev/Documents/code/scripts/Shotline/auto_screenshot.sh"
+
+
+def trigger_screenshot():
+    """执行截图脚本"""
+    try:
+        subprocess.run(["/bin/bash", SCRIPT_PATH], check=True)
+        print("✅ 手动或定时截图任务执行完成")
+    except subprocess.CalledProcessError as e:
+        print(f"❌ 截图脚本执行失败: {e}")
+
+
+def schedule_screenshot():
+    """每天8:00~22:00之间每15分钟触发一次截图"""
+    while True:
+        now = datetime.datetime.now()
+        if 8 <= now.hour < 22:
+            print("⏰ 定时触发截图中...")
+            trigger_screenshot()
+        time.sleep(15 * 60)  # 每15分钟循环
 
 
 @app.route("/")
@@ -63,6 +84,12 @@ def serve_screenshot(date, filename):
     return send_from_directory(dir_path, filename)
 
 
+@app.route("/trigger_shot", methods=["POST"])
+def trigger_shot():
+    threading.Thread(target=trigger_screenshot, daemon=True).start()
+    return "OK", 200
+
+
 def list_dirs():
     dirs = []
     for d in os.listdir(SCREENSHOT_BASE):
@@ -72,4 +99,5 @@ def list_dirs():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5050, debug=True)
+    threading.Thread(target=schedule_screenshot, daemon=True).start()
+    app.run(debug=True, port=5050, host="0.0.0.0")

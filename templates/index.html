@@ -97,6 +97,21 @@
     <h1>📸 Shotline+ — {{ date }}</h1>
 
     <nav>
+      <button
+        onclick="manualTrigger()"
+        style="
+          background: #0ff;
+          color: #000;
+          padding: 8px 16px;
+          border: none;
+          border-radius: 6px;
+          cursor: pointer;
+          font-weight: bold;
+          margin-bottom: 20px;
+        "
+      >
+        🔄 手动触发截图
+      </button>
       {% for d in available_dates %}
       <a
         href="/{{ d }}"
@@ -142,77 +157,82 @@
     </div>
 
     <script>
-            let allShots = [];
-            let hourBoundaries = []; // 记录每小时起止索引
-            let indexCounter = 0;
+            function manualTrigger() {
+        fetch("/trigger_shot", { method: "POST" })
+          .then(() => alert("📸 截图任务已触发"))
+          .catch(() => alert("⚠️ 触发失败"));
+      }
+          let allShots = [];
+          let hourBoundaries = []; // 记录每小时起止索引
+          let indexCounter = 0;
 
-            {% for hour, shots in shots_by_hour %}
-              hourBoundaries.push([indexCounter, indexCounter + {{ shots|length }} - 1]);
-              {% for f in shots %}
-                allShots.push("/screenshots/{{ date }}/{{ f }}");
-                indexCounter += 1;
-              {% endfor %}
+          {% for hour, shots in shots_by_hour %}
+            hourBoundaries.push([indexCounter, indexCounter + {{ shots|length }} - 1]);
+            {% for f in shots %}
+              allShots.push("/screenshots/{{ date }}/{{ f }}");
+              indexCounter += 1;
             {% endfor %}
-            let currentIndex = -1;
+          {% endfor %}
+          let currentIndex = -1;
 
-            function openModal(date, filename) {
-              const src = `/screenshots/${date}/${filename}`;
-              currentIndex = allShots.indexOf(src);
-              const modal = document.getElementById('modal');
-              const img = document.getElementById('modalImg');
-              const fn = document.getElementById('filename');
-              img.src = src;
-              fn.textContent = filename;
-              modal.style.display = 'block';
-            }
-            function closeModal() {
-              document.getElementById('modal').style.display = 'none';
-            }
-            function showImage(i) {
-              if (i < 0 || i >= allShots.length) return;
-              currentIndex = i;
-              const img = document.getElementById('modalImg');
-              const fn = document.getElementById('filename');
-              img.src = allShots[i];
-              const parts = allShots[i].split('/');
-              fn.textContent = parts[parts.length - 1];
-            }
-            function nextImage() {
-              if (currentIndex + 1 < allShots.length) {
-                showImage(currentIndex + 1);
-              } else {
-                // 已到最后一张 → 跳到下一小时最前面（如果有）
-                for (let i = 0; i < hourBoundaries.length; i++) {
-                  if (currentIndex === hourBoundaries[i][1] && i + 1 < hourBoundaries.length) {
-                    showImage(hourBoundaries[i + 1][0]);
-                    return;
-                  }
+          function openModal(date, filename) {
+            const src = `/screenshots/${date}/${filename}`;
+            currentIndex = allShots.indexOf(src);
+            const modal = document.getElementById('modal');
+            const img = document.getElementById('modalImg');
+            const fn = document.getElementById('filename');
+            img.src = src;
+            fn.textContent = filename;
+            modal.style.display = 'block';
+          }
+          function closeModal() {
+            document.getElementById('modal').style.display = 'none';
+          }
+          function showImage(i) {
+            if (i < 0 || i >= allShots.length) return;
+            currentIndex = i;
+            const img = document.getElementById('modalImg');
+            const fn = document.getElementById('filename');
+            img.src = allShots[i];
+            const parts = allShots[i].split('/');
+            fn.textContent = parts[parts.length - 1];
+          }
+          function nextImage() {
+            if (currentIndex + 1 < allShots.length) {
+              showImage(currentIndex + 1);
+            } else {
+              // 已到最后一张 → 跳到下一小时最前面（如果有）
+              for (let i = 0; i < hourBoundaries.length; i++) {
+                if (currentIndex === hourBoundaries[i][1] && i + 1 < hourBoundaries.length) {
+                  showImage(hourBoundaries[i + 1][0]);
+                  return;
                 }
               }
             }
+          }
 
-            function prevImage() {
-              if (currentIndex - 1 >= 0) {
-                showImage(currentIndex - 1);
-              } else {
-                // 已到最前一张 → 跳到上一小时最后一张（如果有）
-                for (let i = 0; i < hourBoundaries.length; i++) {
-                  if (currentIndex === hourBoundaries[i][0] && i - 1 >= 0) {
-                    showImage(hourBoundaries[i - 1][1]);
-                    return;
-                  }
+          function prevImage() {
+            if (currentIndex - 1 >= 0) {
+              showImage(currentIndex - 1);
+            } else {
+              // 已到最前一张 → 跳到上一小时最后一张（如果有）
+              for (let i = 0; i < hourBoundaries.length; i++) {
+                if (currentIndex === hourBoundaries[i][0] && i - 1 >= 0) {
+                  showImage(hourBoundaries[i - 1][1]);
+                  return;
                 }
               }
             }
+          }
 
 
 
-            document.addEventListener('keydown', (e) => {
-              if (document.getElementById('modal').style.display !== 'block') return;
-              if (e.key === 'ArrowRight') nextImage();
-              if (e.key === 'ArrowLeft') prevImage();
-              if (e.key === 'Escape') closeModal();
-            });
+          document.addEventListener('keydown', (e) => {
+            if (document.getElementById('modal').style.display !== 'block') return;
+            if (e.key === 'ArrowRight') nextImage();
+            if (e.key === 'ArrowLeft') prevImage();
+            if (e.key === 'Escape') closeModal();
+          });
     </script>
   </body>
 </html>

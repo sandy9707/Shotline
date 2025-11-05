@@ -7,7 +7,7 @@ output_dir="$output_root/$(date +%Y-%m-%d)"
 mkdir -p "$output_dir"
 
 # 获取当前活动应用，稍后恢复焦点
-current_app=$(osascript -e 'tell application "System Events" to get name of first process whose frontmost is true')
+# current_app=$(osascript -e 'tell application "System Events" to get name of first process whose frontmost is true')
 
 for i in {1..3}; do
     # 调用 Shottr 截全屏
@@ -30,7 +30,7 @@ for i in {1..3}; do
     fi
 
     # 恢复原应用焦点（减少前台闪烁）
-    osascript -e "tell application \"$current_app\" to activate"
+    # osascript -e "tell application \"$current_app\" to activate"
 
     # 间隔 15 秒
     sleep 15
