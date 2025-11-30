@@ -6,9 +6,9 @@
 
 from flask import Flask, render_template, send_from_directory, abort
 import os
-from datetime import datetime
 from collections import defaultdict
 import subprocess, datetime, threading, time
+import random
 
 app = Flask(__name__)
 
@@ -26,20 +26,51 @@ def trigger_screenshot():
 
 
 def schedule_screenshot():
-    """每天8:00~22:00之间每15分钟触发一次截图"""
+    """每天8:00~22:00之间 每小时随机触发4次截图"""
     while True:
         now = datetime.datetime.now()
         if 8 <= now.hour < 22:
-            print("⏰ 定时触发截图中...")
-            trigger_screenshot()
-        time.sleep(15 * 60)  # 每15分钟循环
+            # 当前小时内随机生成4个触发秒数点
+            triggers = sorted(random.sample(range(0, 3600), 1))
+            start = time.time()
+
+            for t in triggers:
+                target = start + t
+                delay = target - time.time()
+                if delay > 0:
+                    time.sleep(delay)
+                if not (8 <= datetime.datetime.now().hour < 22):
+                    break
+                trigger_screenshot()
+
+        # 每天 03:00 执行一次清理（用 last_deletion_date 避免同小时内多次运行）
+        now = datetime.datetime.now()
+        if now.hour == 3:
+            today = now.date()
+            if last_deletion_date != today:
+                cutoff = now - datetime.timedelta(days=7)
+                for d in os.listdir(SCREENSHOT_BASE):
+                    full = os.path.join(SCREENSHOT_BASE, d)
+                    if os.path.isdir(full):
+                        try:
+                            dt = datetime.datetime.strptime(d, "%Y-%m-%d")
+                            if dt < cutoff:
+                                shutil.rmtree(full)
+                        except ValueError:
+                            pass
+                last_deletion_date = today
+
+        # 避免紧循环（短睡眠确保上面的 03:00 检测能在小时内多次循环中仅触发一次）
+        else:
+            # 非时段内，每隔10分钟再检查
+            time.sleep(600)
 
 
 @app.route("/")
 @app.route("/<date>")
 def index(date=None):
     if date is None:
-        date = datetime.now().strftime("%Y-%m-%d")
+        date = datetime.datetime.now().strftime("%Y-%m-%d")
 
     day_path = os.path.join(SCREENSHOT_BASE, date)
     grouped = defaultdict(list)
@@ -100,4 +131,4 @@ def list_dirs():
 
 if __name__ == "__main__":
     threading.Thread(target=schedule_screenshot, daemon=True).start()
-    app.run(debug=True, port=5050, host="0.0.0.0")
+    app.run(debug=True, use_reloader=False, port=55050, host="0.0.0.0")

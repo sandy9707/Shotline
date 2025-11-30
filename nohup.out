@@ -459,3 +459,13 @@ Press CTRL+C to quit
 127.0.0.1 - - [02/Nov/2025 19:41:55] "GET /preview/0/2025-11-02%2019 HTTP/1.1" 304 -
 127.0.0.1 - - [02/Nov/2025 19:41:57] "GET / HTTP/1.1" 200 -
 127.0.0.1 - - [02/Nov/2025 19:41:57] "GET /preview/0/2025-11-02%2019 HTTP/1.1" 304 -
+ * Serving Flask app 'auto_screenshot_web'
+ * Debug mode: on
+WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5050
+ * Running on http://198.18.0.1:5050
+Press CTRL+C to quit
+ * Restarting with watchdog (fsevents)
+ * Debugger is active!
+ * Debugger PIN: 145-135-136
